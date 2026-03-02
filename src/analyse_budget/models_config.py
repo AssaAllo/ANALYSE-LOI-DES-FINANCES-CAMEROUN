@@ -163,11 +163,11 @@ def print_model_comparison():
     print("="*80)
     
     for model_name, config in MODELS_CONFIG.items():
-        print(f"\n📊 {model_name.upper()}")
+        print(f"\n {model_name.upper()}")
         print(f"   {config['description']}")
-        print(f"   💰 Prix: {config['prix_input']} (input) / {config['prix_output']} (output)")
+        print(f"    Prix: {config['prix_input']} (input) / {config['prix_output']} (output)")
         print(f"   ✓ Recommandé pour: {config['recommandé_pour']}")
-        print(f"   👍 Avantages:")
+        print(f"    Avantages:")
         for avantage in config['avantages']:
             print(f"      • {avantage}")
     

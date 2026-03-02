@@ -33,7 +33,7 @@ def audit_semantique_lois(
         Dictionnaire avec similarités, ruptures et évolutions thématiques
     """
     # Chargement du modèle
-    print("📥 Chargement modèle BiEncoder CamemBERT...")
+    print(" Chargement modèle BiEncoder CamemBERT...")
     try:
         if local_model_path is not None:
             # Utilise exclusivement les fichiers locaux, sans contact réseau
@@ -50,14 +50,14 @@ def audit_semantique_lois(
         ) from e
 
     # Calcul des embeddings (vectorisation en batch = plus rapide)
-    print("🔍 Encodage des articles 2024...")
+    print(" Encodage des articles 2024...")
     emb_2024 = model.encode(articles_2024, show_progress_bar=True, convert_to_tensor=True)
 
-    print("🔍 Encodage des articles 2025...")
+    print(" Encodage des articles 2025...")
     emb_2025 = model.encode(articles_2025, show_progress_bar=True, convert_to_tensor=True)
 
     # Matrice de similarité cosinus (optimisée GPU si disponible)
-    print("📊 Calcul matrice de similarité...")
+    print(" Calcul matrice de similarité...")
     similarity_matrix = util.cos_sim(emb_2024, emb_2025)
 
     # Extraction des paires les plus similaires/divergentes

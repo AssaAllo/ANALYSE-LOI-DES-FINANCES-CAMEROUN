@@ -213,7 +213,7 @@ def plot_alignement_budget_frequence(df_analyse: pd.DataFrame) -> go.Figure:
     )
     
     fig.update_layout(
-        title="🎯 Alignement entre Discours (Fréquence) et Budget (Montant)",
+        title=" Alignement entre Discours (Fréquence) et Budget (Montant)",
         xaxis_title="% du Nombre de Lignes Budgétaires",
         yaxis_title="% du Montant Financier (CP)",
         legend_title="Pilier / Année",
@@ -290,9 +290,9 @@ def plot_alignement_concentration(df_analyse: pd.DataFrame,
                 hovertemplate=(
                     "<b>%{text}</b><br>"
                     "----------------<br>"
-                    "🗣️ Fréquence (Bruit) : %{x:.2f}%<br>"
-                    "💰 Budget (Argent) : %{y:.2f}%<br>"
-                    "📊 Concentration (Gini) : %{customdata:.3f}<br>"
+                    " Fréquence (Bruit) : %{x:.2f}%<br>"
+                    " Budget (Argent) : %{y:.2f}%<br>"
+                    " Concentration (Gini) : %{customdata:.3f}<br>"
                     "<extra></extra>"
                 ),
                 text=subset.apply(lambda row: f"{row['Pilier_SND30']} ({row['Année']})", axis=1)

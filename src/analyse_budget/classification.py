@@ -49,9 +49,9 @@ def classer_ligne_dep_snd30(
     # Charger depuis le disque si déjà téléchargé
     if os.path.isdir(local_model_path) and os.listdir(local_model_path):
         model_source = local_model_path
-        print(f"✅ Chargement du modèle depuis : {model_source}")
+        print(f" Chargement du modèle depuis : {model_source}")
     else:
-        print(f"📥 Téléchargement initial du modèle {model_name}...")
+        print(f" Téléchargement initial du modèle {model_name}...")
         try:
             path = snapshot_download(
                 repo_id=model_name,
@@ -59,10 +59,10 @@ def classer_ligne_dep_snd30(
                 local_dir_use_symlinks=False
             )
             model_source = path
-            print(f"✅ Téléchargement terminé : {model_source}")
+            print(f" Téléchargement terminé : {model_source}")
         except Exception as e:
             raise RuntimeError(
-                f"❌ Échec du téléchargement de {model_name}. "
+                f" Échec du téléchargement de {model_name}. "
                 f"Vérifiez votre connexion. Erreur : {e}"
             )
 
@@ -72,7 +72,7 @@ def classer_ligne_dep_snd30(
     elif isinstance(device, str):
         raise ValueError("Paramètre 'device' doit être 'auto', 0 (GPU) ou -1 (CPU).")
 
-    print(f"⚙️ Utilisation du device : {'GPU' if device >= 0 else 'CPU'}")
+    print(f" Utilisation du device : {'GPU' if device >= 0 else 'CPU'}")
 
     # Création du pipeline
     classifier = pipeline(
@@ -146,7 +146,7 @@ def plot_repartition_piliers_par_annee(df_classification: pd.DataFrame,
         )
     
     fig.update_layout(
-        title="📊 Répartition des piliers par année",
+        title=" Répartition des piliers par année",
         xaxis_title="Nombre de libellés classifiés",
         yaxis_title="Pilier stratégique",
         barmode='stack',
@@ -195,7 +195,7 @@ def plot_distribution_scores_classification(df_classification: pd.DataFrame,
         )
     
     fig.update_layout(
-        title="📈 Distribution des scores de classification par année",
+        title=" Distribution des scores de classification par année",
         xaxis_title="Score de confiance (0–1)",
         yaxis_title="Proportion des libellés",
         barmode='overlay',
@@ -265,7 +265,7 @@ def plot_boxplot_scores_par_pilier(df_classification: pd.DataFrame,
                 )
     
     fig.update_layout(
-        title="📦 Scores de classification par pilier et année",
+        title=" Scores de classification par pilier et année",
         height=800,
         template="plotly_white",
         legend_title="Année"
@@ -336,9 +336,9 @@ def classer_articles_snd30(
     # Charger depuis le disque si déjà téléchargé
     if os.path.isdir(local_model_path) and os.listdir(local_model_path):
         model_source = local_model_path
-        print(f"✅ Chargement du modèle depuis : {model_source}")
+        print(f" Chargement du modèle depuis : {model_source}")
     else:
-        print(f"📥 Téléchargement initial du modèle {model_name}...")
+        print(f" Téléchargement initial du modèle {model_name}...")
         try:
             path = snapshot_download(
                 repo_id=model_name,
@@ -346,11 +346,11 @@ def classer_articles_snd30(
                 local_dir_use_symlinks=False
             )
             model_source = path
-            print(f"✅ Téléchargement terminé : {model_source}")
+            print(f" Téléchargement terminé : {model_source}")
         except Exception as e:
             raise RuntimeError(
-                f"❌ Échec du téléchargement de {model_name}. "
-                f"Vérifiez votre connexion. Erreur : {e}"
+                f" Échec du téléchargement de {model_name}. "
+                f" Vérifiez votre connexion. Erreur : {e}"
             )
 
     # Gestion du device
@@ -359,7 +359,7 @@ def classer_articles_snd30(
     elif isinstance(device, str):
         raise ValueError("Paramètre 'device' doit être 'auto', 0 (GPU) ou -1 (CPU).")
 
-    print(f"⚙️ Utilisation du device : {'GPU' if device >= 0 else 'CPU'}")
+    print(f" Utilisation du device : {'GPU' if device >= 0 else 'CPU'}")
 
     # Création du pipeline
     classifier = pipeline(
@@ -441,7 +441,7 @@ def plot_repartition_articles_piliers(df_articles_classifies: pd.DataFrame,
         )
     
     fig.update_layout(
-        title="📰 Répartition des articles de loi par pilier SND30",
+        title=" Répartition des articles de loi par pilier SND30",
         xaxis_title="Nombre d'articles classifiés",
         yaxis_title="Pilier stratégique",
         barmode='stack',
@@ -498,7 +498,7 @@ def plot_distribution_scores_articles(df_articles_classifies: pd.DataFrame,
         )
     
     fig.update_layout(
-        title="📈 Distribution des scores de classification des articles par année",
+        title=" Distribution des scores de classification des articles par année",
         xaxis_title="Score de confiance (0–1)",
         yaxis_title="Proportion des articles",
         barmode='overlay',
@@ -580,7 +580,7 @@ def plot_boxplot_scores_articles(df_articles_classifies: pd.DataFrame,
                 )
     
     fig.update_layout(
-        title="📦 Scores de classification des articles par pilier et année",
+        title=" Scores de classification des articles par pilier et année",
         height=800,
         template="plotly_white",
         legend_title="Année"
@@ -652,7 +652,7 @@ def plot_wordcloud_projets_par_pilier(df_classification: pd.DataFrame,
     
     # Créer la figure avec 2x2 subplots (taille optimisée pour la lisibilité)
     fig, axes = plt.subplots(2, 2, figsize=(18, 14), dpi=150)
-    fig.suptitle(f"☁️ Nuages de mots des projets budgétaires par pilier ({annee})", 
+    fig.suptitle(f" Nuages de mots des projets budgétaires par pilier ({annee})", 
                  fontsize=24, fontweight='bold', y=0.95)
     
     # Stopwords français personnalisés
@@ -733,7 +733,7 @@ def plot_wordcloud_articles_par_pilier(df_articles_classifies: pd.DataFrame,
     
     # Créer la figure avec 2x2 subplots
     fig, axes = plt.subplots(2, 2, figsize=(18, 14), dpi=150)
-    fig.suptitle(f"☁️ Nuages de mots des articles de loi par pilier ({annee})", 
+    fig.suptitle(f" Nuages de mots des articles de loi par pilier ({annee})", 
                  fontsize=24, fontweight='bold', y=0.95)
     
     # Stopwords français personnalisés (avec "article" en plus)
@@ -826,7 +826,7 @@ def plot_wordcloud_par_pilier(df_classification: pd.DataFrame,
     piliers = sorted(df_annee[pilier_col].unique())[:4]  # Limiter à 4 piliers
     
     if len(piliers) < 4:
-        print(f"⚠️ Attention : seulement {len(piliers)} piliers trouvés pour {annee_cible}")
+        print(f" Attention : seulement {len(piliers)} piliers trouvés pour {annee_cible}")
     
     # Créer la grille de subplots
     fig = make_subplots(
@@ -918,7 +918,7 @@ def plot_wordcloud_par_pilier(df_classification: pd.DataFrame,
     # Titre principal
     type_doc = "projets budgétaires" if texte_col == "Libellé" else "articles de loi"
     fig.update_layout(
-        title=f"☁️ Nuages de mots par pilier SND30 ({annee_cible})<br><sub>Analyse des {type_doc}</sub>",
+        title=f" Nuages de mots par pilier SND30 ({annee_cible})<br><sub>Analyse des {type_doc}</sub>",
         height=800,
         showlegend=False,
         template='plotly_white',

@@ -48,7 +48,7 @@ def extract_all_chapters_summary(pdf_path: str, pages: List[int], model_name: Op
     client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
     model_config = get_model_config(model_name)
     
-    print(f"\n🔍 Analyse des chapitres dans le document...")
+    print(f"\n Analyse des chapitres dans le document...")
     print(f"   Modèle: {model_config['name']}\n")
     
     chapters_found = {}
@@ -113,9 +113,9 @@ Si aucun chapitre n'est trouvé, retourne {"chapitres": []}
                     print(f"   ✓ Page {page_num}: {chapitre}")
         
         except Exception as e:
-            print(f"   ⚠️ Erreur page {page_num}: {e}")
+            print(f"Erreur page {page_num}: {e}")
     
-    print(f"\n📊 Résumé: {len(chapters_found)} chapitre(s) unique(s) trouvé(s)\n")
+    print(f"\n Résumé: {len(chapters_found)} chapitre(s) unique(s) trouvé(s)\n")
     
     return {
         "total_chapters": len(chapters_found),
@@ -146,7 +146,7 @@ def extract_budget_info_from_pages(
     # Récupérer la configuration du modèle
     model_config = get_model_config(model_name)
     
-    print(f"\n🤖 Utilisation du modèle: {model_config['name']}")
+    print(f"\n Utilisation du modèle: {model_config['name']}")
     print(f"   {model_config['description']}")
     print(f"   Max tokens: {model_config['max_tokens']}\n")
     
@@ -262,10 +262,10 @@ IMPORTANT: Retourne un tableau "chapitres" avec TOUS les chapitres trouvés sur 
             if chapitres_trouves and len(chapitres_trouves) > 0:
                 # Si plusieurs chapitres sur la page, on utilise le dernier
                 current_chapter = chapitres_trouves[-1]
-                print(f"   📌 Page {page_num}: Chapitre(s) détecté(s): {', '.join(chapitres_trouves)}")
+                print(f"   Page {page_num}: Chapitre(s) détecté(s): {', '.join(chapitres_trouves)}")
                 print(f"      → Chapitre actif: {current_chapter}")
             else:
-                print(f"   📄 Page {page_num}: Aucun nouveau chapitre (chapitre actif: {current_chapter})")
+                print(f"   Page {page_num}: Aucun nouveau chapitre (chapitre actif: {current_chapter})")
             
             # Ajouter le chapitre courant à chaque projet
             for projet in page_data.get("projets", []):
@@ -274,8 +274,8 @@ IMPORTANT: Retourne un tableau "chapitres" avec TOUS les chapitres trouvés sur 
                 results.append(projet)
                 
         except json.JSONDecodeError as e:
-            print(f"❌ Erreur lors du parsing JSON pour la page {page_num}: {e}")
-            print(f"   Contenu reçu: {content[:200]}...")
+            print(f" Erreur lors du parsing JSON pour la page {page_num}: {e}")
+            print(f" Contenu reçu: {content[:200]}...")
             
             # Tentative de récupération: essayer de parser manuellement
             # Chercher un format alternatif dans la réponse
@@ -286,7 +286,7 @@ IMPORTANT: Retourne un tableau "chapitres" avec TOUS les chapitres trouvés sur 
                 chapter_matches = re.findall(r'CHAPITRE\s*\d+\s*-\s*[A-Z\s]+', content, re.IGNORECASE)
                 if chapter_matches:
                     current_chapter = chapter_matches[-1].strip()
-                    print(f"   ⚠️ Récupération: Chapitre extrait du texte brut: {current_chapter}")
+                    print(f" Récupération: Chapitre extrait du texte brut: {current_chapter}")
             except:
                 pass
     

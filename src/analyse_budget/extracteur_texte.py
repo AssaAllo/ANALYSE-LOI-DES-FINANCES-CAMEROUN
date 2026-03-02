@@ -45,22 +45,22 @@ def extraire_articles_loi_finances(chemin_pdf: str) -> List[Dict[str, str]]:
     """
     
     # ÉTAPE 1: Chargement et extraction de toutes les lignes du PDF
-    print(f"📄 Chargement du fichier : {chemin_pdf}...")
+    print(f" Chargement du fichier : {chemin_pdf}...")
     toutes_les_lignes = _charger_et_extraire_lignes(chemin_pdf)
     print(f"✓ Extraction terminée : {len(toutes_les_lignes)} lignes récupérées")
     
     # ÉTAPE 2: Identification des sections principales du document
-    print("🔍 Identification des sections du document...")
+    print(" Identification des sections du document...")
     sections = _identifier_sections(toutes_les_lignes)
     
     # ÉTAPE 3: Extraction des articles de chaque section
-    print("📋 Extraction des articles...")
+    print(" Extraction des articles...")
     articles_partie_haute = _extraire_articles_depuis_lignes(sections['articles_partie_haute'])
     articles_dispositions = _extraire_articles_depuis_lignes(sections['dispositions_speciales'])
     
     # ÉTAPE 4: Fusion et retour des résultats
     tous_les_articles = articles_partie_haute + articles_dispositions
-    print(f"✓ Extraction terminée : {len(tous_les_articles)} articles extraits")
+    print(f" Extraction terminée : {len(tous_les_articles)} articles extraits")
     
     return tous_les_articles
 
