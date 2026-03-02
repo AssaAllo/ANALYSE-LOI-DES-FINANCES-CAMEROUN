@@ -47,7 +47,7 @@ def extraire_articles_loi_finances(chemin_pdf: str) -> List[Dict[str, str]]:
     # ÉTAPE 1: Chargement et extraction de toutes les lignes du PDF
     print(f" Chargement du fichier : {chemin_pdf}...")
     toutes_les_lignes = _charger_et_extraire_lignes(chemin_pdf)
-    print(f"✓ Extraction terminée : {len(toutes_les_lignes)} lignes récupérées")
+    print(f" Extraction terminée : {len(toutes_les_lignes)} lignes récupérées")
     
     # ÉTAPE 2: Identification des sections principales du document
     print(" Identification des sections du document...")
