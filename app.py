@@ -813,7 +813,7 @@ def page_classification(datasets: Dict[str, Any]) -> None:
                         value=min(500, len(df_budget_all)),
                     )
 
-                if st.button("Lancer la classification des libellés", type="primary"):
+                if st.button("Lancer la classification des libellés (15 secondes pour 50 articles avec batch size de 16)", type="primary"):
                     subset = df_budget_all.head(max_rows).copy()
                     libelles = subset["libelle"].astype(str).tolist()
                     with st.spinner("Classification zero-shot en cours..."):
@@ -1168,7 +1168,7 @@ def page_audit_semantique(datasets: Dict[str, Any]) -> None:
                 placeholder="ex: c:/models/biencoder-camembert-base-mmarcoFR",
             ).strip() or None
 
-    if st.button("Lancer l’audit sémantique (SentenceTransformer – peut être long)", type="primary"):
+    if st.button("Lancer l’audit sémantique (SentenceTransformer – 30 secondes pour 100 articles)", type="primary"):
         articles_2024 = df_a["texte_complet"].astype(str).head(max_articles).tolist()
         articles_2025 = df_b["texte_complet"].astype(str).head(max_articles).tolist()
 
