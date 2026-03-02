@@ -31,8 +31,6 @@ for _p in [
 
 # Imports basés sur les modules déjà présents dans le projet
 
-from src.analyse_budget import (pretraitement, classification, analyse_budgetaire, analyse_semantique)
-
 try:
     import pretraitement
 except ImportError:
