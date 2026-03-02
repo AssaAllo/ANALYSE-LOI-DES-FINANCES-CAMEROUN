@@ -29,8 +29,6 @@ for _p in [
     if _p.exists() and str(_p) not in sys.path:
         sys.path.append(str(_p))
 
-# Imports basés sur les modules déjà présents dans le projet
-
 try:
     import pretraitement
 except ImportError:
@@ -90,13 +88,28 @@ AVAILABLE_ARTICLE_FILES: Dict[str, str] = {
     "2024-2025": "articles_extract_2024_2025.json",
 }
 
+# Fichiers de classification pré-calculés (résultats déjà stockés en JSON)
+AVAILABLE_BUDGET_CLASSIF_FILES: Dict[str, str] = {
+    "2023-2024": "classification_budget_2023_2024.json",
+    "2024-2025": "classification_budget_2024_2025.json",
+}
+
+AVAILABLE_ARTICLE_CLASSIF_FILES: Dict[str, str] = {
+    "2023-2024": "classification_articles_2023_2024.json",
+    "2024-2025": "classification_articles_2024_2025.json",
+}
+
+AVAILABLE_PRETRAIT_FILES: Dict[str, str] = {
+    "2023-2024": "pretraitement_articles_2023_2024.json",
+    "2024-2025": "pretraitement_articles_2024_2025.json",
+}
+
 
 # ---------------------------------------------------------------------------
 # Style global et helpers UI
 # ---------------------------------------------------------------------------
 
 def inject_global_css() -> None:
-    """Applique un thème clair moderne avec cartes et sections colorées."""
     st.markdown(
         """
         <style>
@@ -111,7 +124,6 @@ def inject_global_css() -> None:
             --taf-text-soft: #6b7280;
         }
 
-        /* Arrière-plan global et couleur de texte */
         [data-testid="stAppViewContainer"] {
             background: radial-gradient(circle at top left, rgba(37, 99, 235, 0.07), transparent 50%),
                         radial-gradient(circle at bottom right, rgba(249, 115, 22, 0.05), transparent 55%),
@@ -119,7 +131,6 @@ def inject_global_css() -> None:
             color: var(--taf-text-main);
         }
 
-        /* Sidebar */
         [data-testid="stSidebar"] {
             background: linear-gradient(180deg, #ffffff 0%, #f3f4f6 45%, #e5e7eb 100%);
             border-right: 1px solid rgba(209, 213, 219, 0.9);
@@ -128,12 +139,10 @@ def inject_global_css() -> None:
             color: var(--taf-text-main);
         }
 
-        /* Titre & sous-titres */
         h1, h2, h3, h4 {
             font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         }
 
-        /* Hero header principal */
         .taf-hero {
             padding: 1.6rem 1.4rem 1.1rem 1.4rem;
             border-radius: 1.4rem;
@@ -170,7 +179,6 @@ def inject_global_css() -> None:
             letter-spacing: 0.02em;
         }
 
-        /* Cartes metrics */
         [data-testid="stMetric"] {
             background: radial-gradient(circle at top left, rgba(219, 234, 254, 0.9), #ffffff);
             padding: 0.95rem 1.15rem;
@@ -182,7 +190,6 @@ def inject_global_css() -> None:
             color: var(--taf-text-main);
         }
 
-        /* En-têtes de section (par onglet) */
         .taf-section-header {
             margin: 0 0 1.0rem 0;
             padding: 0.9rem 1.1rem;
@@ -251,7 +258,20 @@ def inject_global_css() -> None:
             border-color: rgba(75, 85, 99, 0.5);
         }
 
-        /* Tables (dataframes) */
+        .taf-default-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.18rem 0.75rem;
+            border-radius: 999px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.5);
+            color: #065f46;
+            font-size: 0.76rem;
+            font-weight: 500;
+            margin-bottom: 0.6rem;
+        }
+
         [data-testid="stDataFrame"] {
             border-radius: 1.1rem;
             overflow: hidden;
@@ -260,7 +280,6 @@ def inject_global_css() -> None:
             background: #ffffff;
         }
 
-        /* Tabs */
         button[data-baseweb="tab"] {
             border-radius: 999px !important;
             padding: 0.18rem 0.95rem !important;
@@ -276,7 +295,6 @@ def inject_global_css() -> None:
             color: var(--taf-text-soft) !important;
         }
 
-        /* Inputs texte */
         [data-testid="stTextInput"] input,
         [data-testid="stTextArea"] textarea {
             background-color: #ffffff !important;
@@ -285,12 +303,10 @@ def inject_global_css() -> None:
             color: var(--taf-text-main) !important;
         }
 
-        /* Sliders */
         [data-testid="stSlider"] > div > div > div {
             color: var(--taf-text-main);
         }
 
-        /* Download button & primary buttons */
         [data-testid="baseButton-secondary"] {
             border-radius: 999px !important;
         }
@@ -344,6 +360,43 @@ def load_default_datasets() -> Dict[str, Any]:
     }
 
 
+@st.cache_data(show_spinner=False)
+def load_precomputed_classifications() -> Dict[str, Any]:
+    """Charge les classifications et prétraitements pré-calculés depuis les JSON locaux."""
+    budget_classif_dfs: Dict[str, pd.DataFrame] = {}
+    for label, filename in AVAILABLE_BUDGET_CLASSIF_FILES.items():
+        df = load_json_as_df(BASE_DIR / "data" / filename)
+        if not df.empty:
+            df = df.copy()
+            if "source" not in df.columns:
+                df["source"] = label
+            budget_classif_dfs[label] = df
+
+    article_classif_dfs: Dict[str, pd.DataFrame] = {}
+    for label, filename in AVAILABLE_ARTICLE_CLASSIF_FILES.items():
+        df = load_json_as_df(BASE_DIR / "data" / filename)
+        if not df.empty:
+            df = df.copy()
+            if "source" not in df.columns:
+                df["source"] = label
+            article_classif_dfs[label] = df
+
+    pretrait_dfs: Dict[str, pd.DataFrame] = {}
+    for label, filename in AVAILABLE_PRETRAIT_FILES.items():
+        df = load_json_as_df(BASE_DIR / "data" / filename)
+        if not df.empty:
+            df = df.copy()
+            if "source" not in df.columns:
+                df["source"] = label
+            pretrait_dfs[label] = df
+
+    return {
+        "budget_classif": budget_classif_dfs,
+        "article_classif": article_classif_dfs,
+        "pretrait": pretrait_dfs,
+    }
+
+
 def get_concat_df(dfs: Dict[str, pd.DataFrame]) -> pd.DataFrame:
     if not dfs:
         return pd.DataFrame()
@@ -351,7 +404,6 @@ def get_concat_df(dfs: Dict[str, pd.DataFrame]) -> pd.DataFrame:
 
 
 def display_df_with_download(df: pd.DataFrame, label: str) -> None:
-    """Propose uniquement le téléchargement des données, sans affichage de tableau."""
     if df.empty:
         st.info("Aucune donnée disponible à télécharger pour cette section.")
         return
@@ -378,7 +430,6 @@ def parse_amount_to_float(val: Any) -> float:
 
 
 def render_section_header(title: str, subtitle: str, badge_label: str, badge_variant: str) -> None:
-    """Affiche un en-tête de section avec badge coloré par onglet."""
     badge_class = f"taf-section-badge--{badge_variant}"
     st.markdown(
         f"""
@@ -396,13 +447,161 @@ def render_section_header(title: str, subtitle: str, badge_label: str, badge_var
     )
 
 
+def render_default_badge(text: str = "✅ Résultats pré-calculés (JSON local)") -> None:
+    st.markdown(
+        f'<div class="taf-default-badge">📂 {text}</div>',
+        unsafe_allow_html=True,
+    )
+
+
+def _render_classification_visuals_budget(df_merged: pd.DataFrame, annees_sel: List[str]) -> None:
+    """Affiche les visuels de classification budgétaire (réutilisable)."""
+    k1, k2, k3 = st.columns(3)
+    with k1:
+        st.metric("Lignes classifiées", len(df_merged))
+    with k2:
+        st.metric("Piliers SND30", df_merged["Pilier"].nunique() if "Pilier" in df_merged.columns else 0)
+    with k3:
+        sc = df_merged["Score"].mean() if "Score" in df_merged.columns else 0
+        st.metric("Score moyen", f"{sc:.3f}")
+
+    with st.expander("Télécharger la classification (CSV)"):
+        display_df_with_download(df_merged, "classification_lignes_budgetaires")
+
+    if classification_mod is not None:
+        if "source" in df_merged.columns:
+            df_plot = df_merged.copy()
+        else:
+            df_plot = df_merged.copy()
+            df_plot["source"] = ";".join(annees_sel)
+
+        try:
+            fig_rep = classification_mod.plot_repartition_piliers_par_annee(df_plot, source_col="source")
+            st.plotly_chart(fig_rep, use_container_width=True)
+        except Exception as e:
+            st.caption(f"Graphique répartition : {e}")
+
+        if "Score" in df_plot.columns:
+            try:
+                fig_hist = classification_mod.plot_distribution_scores_classification(df_plot, source_col="source")
+                st.plotly_chart(fig_hist, use_container_width=True)
+            except Exception as e:
+                st.caption(f"Histogramme scores : {e}")
+            try:
+                fig_box = classification_mod.plot_boxplot_scores_par_pilier(df_plot, source_col="source")
+                st.plotly_chart(fig_box, use_container_width=True)
+            except Exception as e:
+                st.caption(f"Boxplot : {e}")
+
+        if hasattr(classification_mod, "plot_wordcloud_projets_par_pilier"):
+            st.markdown("#### Nuages de mots par pilier SND30")
+            for annee in annees_sel:
+                df_annee = df_merged[df_merged["source"] == annee] if "source" in df_merged.columns else df_merged
+                if not df_annee.empty and "Pilier" in df_annee.columns:
+                    try:
+                        df_annee = df_annee.copy()
+                        df_annee["source"] = annee
+                        fig_wc = classification_mod.plot_wordcloud_projets_par_pilier(
+                            df_annee, annee=annee, libelle_col="libelle", pilier_col="Pilier", source_col="source"
+                        )
+                        st.pyplot(fig_wc)
+                        import matplotlib.pyplot as plt
+                        plt.close(fig_wc)
+                    except Exception as e:
+                        st.caption(f"Wordcloud {annee}: {e}")
+    else:
+        # Fallback visuels sans le module classification
+        if "Pilier" in df_merged.columns:
+            pilier_counts = df_merged.groupby(["source", "Pilier"]).size().reset_index(name="nb") if "source" in df_merged.columns else df_merged.groupby("Pilier").size().reset_index(name="nb")
+            fig_bar = px.bar(pilier_counts, x="nb", y="Pilier", orientation="h",
+                             color="source" if "source" in pilier_counts.columns else None,
+                             title="Répartition des lignes par pilier SND30")
+            st.plotly_chart(fig_bar, use_container_width=True)
+
+        if "Score" in df_merged.columns:
+            fig_hist = px.histogram(df_merged, x="Score", color="source" if "source" in df_merged.columns else None,
+                                    title="Distribution des scores de classification", nbins=30)
+            st.plotly_chart(fig_hist, use_container_width=True)
+
+
+def _render_classification_visuals_articles(df_merged: pd.DataFrame, annees_sel: List[str]) -> None:
+    """Affiche les visuels de classification articles (réutilisable)."""
+    ka1, ka2, ka3 = st.columns(3)
+    with ka1:
+        st.metric("Articles classifiés", len(df_merged))
+    with ka2:
+        st.metric("Piliers SND30", df_merged["Pilier"].nunique() if "Pilier" in df_merged.columns else 0)
+    with ka3:
+        sca = df_merged["Score"].mean() if "Score" in df_merged.columns else 0
+        st.metric("Score moyen", f"{sca:.3f}")
+
+    with st.expander("Télécharger la classification des articles (CSV)"):
+        display_df_with_download(df_merged, "classification_articles_loi")
+
+    if classification_mod is not None:
+        if "source" not in df_merged.columns:
+            df_merged = df_merged.copy()
+            df_merged["source"] = ";".join(annees_sel)
+
+        try:
+            fig_rep_art = classification_mod.plot_repartition_articles_piliers(
+                df_merged, source_col="source", pilier_col="Pilier",
+            )
+            st.plotly_chart(fig_rep_art, use_container_width=True)
+        except Exception as e:
+            st.caption(f"Graphique répartition articles : {e}")
+
+        if "Score" in df_merged.columns:
+            try:
+                fig_hist_art = classification_mod.plot_distribution_scores_articles(
+                    df_merged, source_col="source", score_col="Score",
+                )
+                st.plotly_chart(fig_hist_art, use_container_width=True)
+            except Exception as e:
+                st.caption(f"Histogramme scores articles : {e}")
+            try:
+                fig_box_art = classification_mod.plot_boxplot_scores_articles(
+                    df_merged, source_col="source", pilier_col="Pilier", score_col="Score",
+                )
+                st.plotly_chart(fig_box_art, use_container_width=True)
+            except Exception as e:
+                st.caption(f"Boxplot articles : {e}")
+
+        if hasattr(classification_mod, "plot_wordcloud_articles_par_pilier"):
+            st.markdown("#### Nuages de mots des articles par pilier SND30")
+            for annee in annees_sel:
+                df_art_annee = df_merged[df_merged["source"] == annee] if "source" in df_merged.columns else df_merged
+                if not df_art_annee.empty and "Pilier" in df_art_annee.columns:
+                    try:
+                        fig_wc_art = classification_mod.plot_wordcloud_articles_par_pilier(
+                            df_art_annee, annee=annee, article_col="texte_complet", pilier_col="Pilier", source_col="source"
+                        )
+                        st.pyplot(fig_wc_art)
+                        import matplotlib.pyplot as plt
+                        plt.close(fig_wc_art)
+                    except Exception as e:
+                        st.caption(f"Wordcloud articles {annee}: {e}")
+    else:
+        if "Pilier" in df_merged.columns:
+            pilier_counts = df_merged.groupby(["source", "Pilier"]).size().reset_index(name="nb") if "source" in df_merged.columns else df_merged.groupby("Pilier").size().reset_index(name="nb")
+            fig_bar = px.bar(pilier_counts, x="nb", y="Pilier", orientation="h",
+                             color="source" if "source" in pilier_counts.columns else None,
+                             title="Répartition des articles par pilier SND30")
+            st.plotly_chart(fig_bar, use_container_width=True)
+
+        if "Score" in df_merged.columns:
+            fig_hist = px.histogram(df_merged, x="Score", color="source" if "source" in df_merged.columns else None,
+                                    title="Distribution des scores de classification articles", nbins=30)
+            st.plotly_chart(fig_hist, use_container_width=True)
+
+
 # ---------------------------------------------------------------------------
 # Pages du tableau de bord
 # ---------------------------------------------------------------------------
 
 def page_overview(datasets: Dict[str, Any]) -> None:
     render_section_header(
-        title="Vue d’ensemble",
+        title="Vue d'ensemble",
         subtitle="Vue synthétique des volumes budgétaires et des articles extraits par exercice ",
         badge_label="Synthèse",
         badge_variant="overview",
@@ -419,13 +618,12 @@ def page_overview(datasets: Dict[str, Any]) -> None:
 
     with col2:
         total_articles = sum(len(df) for df in article_dfs.values())
-        st.metric("Nombre total d’articles extraits", f"{total_articles:,}".replace(",", " "))
+        st.metric("Nombre total d'articles extraits", f"{total_articles:,}".replace(",", " "))
 
     with col3:
         annees = sorted(set(list(budget_dfs.keys()) + list(article_dfs.keys())))
         st.metric("Période couverte", " – ".join(annees) if annees else "N/A")
 
-   
     df_budget_all = get_concat_df(budget_dfs)
     df_articles_all = get_concat_df(article_dfs)
 
@@ -442,9 +640,7 @@ def page_overview(datasets: Dict[str, Any]) -> None:
         synth["CP_total"] = synth["CP_total"].round(0)
         with st.expander("Télécharger la synthèse budgétaire (CSV)"):
             display_df_with_download(synth, "synthese_budget_par_annee")
-        
 
-        # Pie chart répartition CP par exercice
         fig_pie_cp = px.pie(
             synth, values="CP_total", names="source",
             title="Répartition du budget CP par exercice",
@@ -456,7 +652,7 @@ def page_overview(datasets: Dict[str, Any]) -> None:
     if not df_articles_all.empty:
         if "chapitre_numero" in df_articles_all.columns:
             top_n = st.slider(
-                "Nombre de chapitres à afficher (par nombre d’articles)",
+                "Nombre de chapitres à afficher (par nombre d'articles)",
                 min_value=5,
                 max_value=30,
                 value=10,
@@ -477,16 +673,15 @@ def page_overview(datasets: Dict[str, Any]) -> None:
                 color="source",
                 orientation="h",
                 labels={
-                    "nb_articles": "Nombre d’articles",
+                    "nb_articles": "Nombre d'articles",
                     "chapitre_numero": "Chapitre",
                     "source": "Exercice",
                 },
-                title="Top chapitres par nombre d’articles extraits",
+                title="Top chapitres par nombre d'articles extraits",
             )
             fig_chap.update_layout(yaxis={"categoryorder": "total ascending"})
             st.plotly_chart(fig_chap, use_container_width=True)
 
-            # Pie chart top chapitres par nombre d'articles
             chap_pie = chap_counts.sort_values("nb_articles", ascending=False).head(8)
             fig_pie_art = px.pie(
                 chap_pie, values="nb_articles", names="chapitre_numero",
@@ -519,7 +714,7 @@ def page_extraction(datasets: Dict[str, Any]) -> None:
             st.info("Aucun fichier JSON de budget détecté à la racine du projet.")
         else:
             annees = sorted(budget_dfs.keys())
-            annee = st.selectbox("Choisir l’année budgétaire", annees, key="budget_extraction_year")
+            annee = st.selectbox("Choisir l'année budgétaire", annees, key="budget_extraction_year")
             df = budget_dfs[annee]
             st.metric("Lignes budgétaires", len(df))
 
@@ -548,7 +743,6 @@ def page_extraction(datasets: Dict[str, Any]) -> None:
                 fig.update_layout(yaxis={"categoryorder": "total ascending"})
                 st.plotly_chart(fig, use_container_width=True)
 
-                # Pie chart CP par chapitre (top 10)
                 chap_pie_b = chap_budget.head(10)
                 fig_pie_b = px.pie(
                     chap_pie_b, values="cp_float", names="chapitre",
@@ -564,10 +758,10 @@ def page_extraction(datasets: Dict[str, Any]) -> None:
     with tabs[1]:
         st.markdown("#### Articles de loi extraits")
         if not article_dfs:
-            st.info("Aucun fichier JSON d’articles détecté à la racine du projet.")
+            st.info("Aucun fichier JSON d'articles détecté à la racine du projet.")
         else:
             annees = sorted(article_dfs.keys())
-            annee = st.selectbox("Choisir l’année des articles", annees, key="articles_extraction_year")
+            annee = st.selectbox("Choisir l'année des articles", annees, key="articles_extraction_year")
             df = article_dfs[annee]
             st.metric("Articles extraits", len(df))
             if "chapitre_numero" in df.columns:
@@ -585,15 +779,14 @@ def page_extraction(datasets: Dict[str, Any]) -> None:
                     y="chapitre_numero",
                     orientation="h",
                     labels={
-                        "nb_articles": "Nombre d’articles",
+                        "nb_articles": "Nombre d'articles",
                         "chapitre_numero": "Chapitre",
                     },
-                    title=f"Top 20 chapitres par nombre d’articles – {annee}",
+                    title=f"Top 20 chapitres par nombre d'articles – {annee}",
                 )
                 fig.update_layout(yaxis={"categoryorder": "total ascending"})
                 st.plotly_chart(fig, use_container_width=True)
 
-                # Pie chart articles par chapitre (top 10)
                 chap_pie_a = chap_year.head(10)
                 fig_pie_a = px.pie(
                     chap_pie_a, values="nb_articles", names="chapitre_numero",
@@ -609,7 +802,7 @@ def page_extraction(datasets: Dict[str, Any]) -> None:
     with tabs[2]:
         st.markdown("#### Extraction directe depuis un PDF de loi de finances")
         st.caption(
-            "Ces fonctionnalités s’appuient sur les modules d’extraction existants "
+            "Ces fonctionnalités s'appuient sur les modules d'extraction existants "
             "(pdfplumber, PyMuPDF, OpenAI, etc.). Elles peuvent être **longues** et "
             "nécessitent que les dépendances et clés API soient correctement configurées."
         )
@@ -632,9 +825,9 @@ def page_extraction(datasets: Dict[str, Any]) -> None:
         with col_a:
             st.markdown("##### Extraction des **articles de loi** (pdfplumber)")
             if extraire_articles_loi_finances is None:
-                st.warning("Le module `extracteur_texte.py` n’a pas pu être importé.")
+                st.warning("Le module `extracteur_texte.py` n'a pas pu être importé.")
             else:
-                if st.button("Lancer l’extraction des articles depuis le PDF", type="primary", disabled=tmp_pdf_path is None):
+                if st.button("Lancer l'extraction des articles depuis le PDF", type="primary", disabled=tmp_pdf_path is None):
                     if tmp_pdf_path is None:
                         st.error("Aucun PDF chargé.")
                     else:
@@ -645,12 +838,12 @@ def page_extraction(datasets: Dict[str, Any]) -> None:
                                 st.write(f"Extraction terminée : **{len(df_articles)}** articles trouvés.")
                                 display_df_with_download(df_articles, "articles_extraits_depuis_pdf")
                             except Exception as e:
-                                st.error(f"Erreur lors de l’extraction des articles : {e}")
+                                st.error(f"Erreur lors de l'extraction des articles : {e}")
 
         with col_b:
             st.markdown("##### Extraction **budgétaire détaillée** (OpenAI Vision)")
             if extract_budget_info_from_pages is None:
-                st.warning("Le module `extract_budget_info.py` n’a pas pu être importé ou dépendances manquantes.")
+                st.warning("Le module `extract_budget_info.py` n'a pas pu être importé ou dépendances manquantes.")
             else:
                 pages_str = st.text_input(
                     "Pages à extraire (ex: 80-95 ou 87,88,89)",
@@ -658,7 +851,7 @@ def page_extraction(datasets: Dict[str, Any]) -> None:
                 )
 
                 if st.button(
-                    "Lancer l’extraction budgétaire avancée (coûteux, nécessite OPENAI_API_KEY)",
+                    "Lancer l'extraction budgétaire avancée (coûteux, nécessite OPENAI_API_KEY)",
                     disabled=tmp_pdf_path is None,
                 ):
                     if tmp_pdf_path is None:
@@ -682,8 +875,12 @@ def page_extraction(datasets: Dict[str, Any]) -> None:
                                 st.write(f"Extraction terminée : **{len(df_budget)}** lignes budgétaires trouvées.")
                                 display_df_with_download(df_budget, "budget_extrait_depuis_pdf")
                             except Exception as e:
-                                st.error(f"Erreur lors de l’extraction budgétaire : {e}")
+                                st.error(f"Erreur lors de l'extraction budgétaire : {e}")
 
+
+# ---------------------------------------------------------------------------
+# PAGE PRÉTRAITEMENT — avec résultats par défaut depuis JSON
+# ---------------------------------------------------------------------------
 
 def page_pretraitement(datasets: Dict[str, Any]) -> None:
     render_section_header(
@@ -693,56 +890,19 @@ def page_pretraitement(datasets: Dict[str, Any]) -> None:
         badge_variant="pretraitement",
     )
 
-    if pretraitement is None:
-        st.error("Le module `pretraitement.py` n’a pas pu être importé.")
-        return
+    precomputed = load_precomputed_classifications()
+    pretrait_dfs = precomputed["pretrait"]
 
     article_dfs: Dict[str, pd.DataFrame] = datasets["articles"]
     df_articles_all = get_concat_df(article_dfs)
 
     mode = st.radio(
         "Source du texte",
-        [ "Articles extraits (JSON)", "Saisie manuelle"],
+        ["Saisie manuelle", "Articles extraits (JSON)"],
         horizontal=True,
     )
 
-    if mode == "Articles extraits (JSON)":
-        if df_articles_all.empty:
-            st.info("Aucun article disponible. Utiliser d’abord l’extraction ou fournir un JSON.")
-            return
-
-        st.markdown("Sélectionner un échantillon d’articles pour visualiser le nettoyage.")
-        nb_samples = st.slider("Nombre d’articles à afficher", min_value=10, max_value=min(200, len(df_articles_all)), value=min(50, len(df_articles_all)))
-        sample_df = df_articles_all.sample(min(nb_samples, len(df_articles_all)), random_state=42)
-
-        cleaned_list = pretraitement.pretraiter_liste_articles(sample_df["texte_complet"].tolist())
-        sample_df = sample_df.copy()
-        sample_df["texte_nettoye"] = cleaned_list
-        sample_df["len_brut"] = sample_df["texte_complet"].astype(str).str.len()
-        sample_df["len_nettoye"] = sample_df["texte_nettoye"].astype(str).str.len()
-
-        st.metric("Articles traités", len(sample_df))
-        r1, r2 = st.columns(2)
-        with r1:
-            st.metric("Longueur moyenne (brut)", f"{sample_df['len_brut'].mean():.0f} car.")
-        with r2:
-            st.metric("Longueur moyenne (nettoyé)", f"{sample_df['len_nettoye'].mean():.0f} car.")
-
-        fig_pret = px.scatter(
-            sample_df, x="len_brut", y="len_nettoye",
-            labels={"len_brut": "Longueur brut (car.)", "len_nettoye": "Longueur nettoyé (car.)"},
-            title="Impact du prétraitement : longueur brut vs longueur nettoyée",
-        )
-        _mx = sample_df["len_brut"].max()
-        if _mx > 0:
-            fig_pret.add_shape(type="line", x0=0, y0=0, x1=_mx, y1=_mx, line=dict(dash="dash", color="gray"))
-        st.plotly_chart(fig_pret, use_container_width=True)
-
-        with st.expander("Télécharger l'échantillon prétraité (CSV)"):
-            display_df_with_download(sample_df[["chapitre_numero", "chapitre_titre", "len_brut", "len_nettoye"]], "pretraitement_echantillon")
-
-
-    else:
+    if mode == "Saisie manuelle":
         texte_brut = st.text_area(
             "Texte brut de loi / article à nettoyer",
             height=200,
@@ -751,6 +911,8 @@ def page_pretraitement(datasets: Dict[str, Any]) -> None:
         if st.button("Nettoyer le texte"):
             if not texte_brut.strip():
                 st.warning("Merci de saisir un texte.")
+            elif pretraitement is None:
+                st.error("Le module `pretraitement.py` n'a pas pu être importé.")
             else:
                 with st.spinner("Prétraitement en cours..."):
                     propre = pretraitement.pretraiter_texte_loi_finances(texte_brut)
@@ -761,7 +923,94 @@ def page_pretraitement(datasets: Dict[str, Any]) -> None:
                 with col2:
                     st.markdown("**Texte prétraité**")
                     st.code(propre)
-        
+
+    else:
+        # ── Onglet "Articles extraits (JSON)" ──────────────────────────────
+        # Afficher les résultats pré-calculés par défaut si disponibles
+        has_precomputed = bool(pretrait_dfs)
+
+        if has_precomputed:
+            render_default_badge("Résultats pré-calculés chargés depuis les JSON locaux")
+            annees_pretrait = sorted(pretrait_dfs.keys())
+            annee_pretrait_sel = st.selectbox("Année à afficher", annees_pretrait, key="pretrait_year_default")
+            df_pretrait_show = pretrait_dfs[annee_pretrait_sel]
+
+            st.metric("Articles traités", len(df_pretrait_show))
+
+            if "len_brut" in df_pretrait_show.columns and "len_nettoye" in df_pretrait_show.columns:
+                r1, r2 = st.columns(2)
+                with r1:
+                    st.metric("Longueur moyenne (brut)", f"{df_pretrait_show['len_brut'].mean():.0f} car.")
+                with r2:
+                    st.metric("Longueur moyenne (nettoyé)", f"{df_pretrait_show['len_nettoye'].mean():.0f} car.")
+
+                fig_pret = px.scatter(
+                    df_pretrait_show, x="len_brut", y="len_nettoye",
+                    labels={"len_brut": "Longueur brut (car.)", "len_nettoye": "Longueur nettoyé (car.)"},
+                    title=f"Impact du prétraitement : longueur brut vs nettoyée – {annee_pretrait_sel}",
+                )
+                _mx = df_pretrait_show["len_brut"].max()
+                if _mx > 0:
+                    fig_pret.add_shape(type="line", x0=0, y0=0, x1=_mx, y1=_mx,
+                                       line=dict(dash="dash", color="gray"))
+                st.plotly_chart(fig_pret, use_container_width=True)
+
+            with st.expander("Télécharger l'échantillon prétraité (CSV)"):
+                cols_dl = [c for c in ["chapitre_numero", "chapitre_titre", "len_brut", "len_nettoye"] if c in df_pretrait_show.columns]
+                display_df_with_download(df_pretrait_show[cols_dl] if cols_dl else df_pretrait_show, "pretraitement_echantillon")
+
+        # Toujours proposer de relancer le calcul
+        with st.expander("🔄 Relancer le prétraitement (recalcul depuis les articles JSON)", expanded=not has_precomputed):
+            if pretraitement is None:
+                st.error("Le module `pretraitement.py` n'a pas pu être importé.")
+            elif df_articles_all.empty:
+                st.info("Aucun article disponible. Utiliser d'abord l'extraction ou fournir un JSON.")
+            else:
+                st.markdown("Sélectionner un échantillon d'articles pour visualiser le nettoyage.")
+                nb_samples = st.slider(
+                    "Nombre d'articles à afficher",
+                    min_value=10,
+                    max_value=min(200, len(df_articles_all)),
+                    value=min(50, len(df_articles_all)),
+                    key="pretrait_slider_rerun",
+                )
+                if st.button("Lancer le prétraitement", type="primary", key="btn_pretrait_rerun"):
+                    sample_df = df_articles_all.sample(min(nb_samples, len(df_articles_all)), random_state=42)
+                    cleaned_list = pretraitement.pretraiter_liste_articles(sample_df["texte_complet"].tolist())
+                    sample_df = sample_df.copy()
+                    sample_df["texte_nettoye"] = cleaned_list
+                    sample_df["len_brut"] = sample_df["texte_complet"].astype(str).str.len()
+                    sample_df["len_nettoye"] = sample_df["texte_nettoye"].astype(str).str.len()
+
+                    st.metric("Articles traités", len(sample_df))
+                    r1, r2 = st.columns(2)
+                    with r1:
+                        st.metric("Longueur moyenne (brut)", f"{sample_df['len_brut'].mean():.0f} car.")
+                    with r2:
+                        st.metric("Longueur moyenne (nettoyé)", f"{sample_df['len_nettoye'].mean():.0f} car.")
+
+                    fig_pret = px.scatter(
+                        sample_df, x="len_brut", y="len_nettoye",
+                        labels={"len_brut": "Longueur brut (car.)", "len_nettoye": "Longueur nettoyé (car.)"},
+                        title="Impact du prétraitement : longueur brut vs longueur nettoyée",
+                    )
+                    _mx = sample_df["len_brut"].max()
+                    if _mx > 0:
+                        fig_pret.add_shape(type="line", x0=0, y0=0, x1=_mx, y1=_mx,
+                                           line=dict(dash="dash", color="gray"))
+                    st.plotly_chart(fig_pret, use_container_width=True)
+
+                    with st.expander("Télécharger l'échantillon prétraité (CSV)"):
+                        display_df_with_download(
+                            sample_df[["chapitre_numero", "chapitre_titre", "len_brut", "len_nettoye"]],
+                            "pretraitement_echantillon_rerun",
+                        )
+
+
+# ---------------------------------------------------------------------------
+# PAGE CLASSIFICATION — avec résultats par défaut depuis JSON
+# ---------------------------------------------------------------------------
+
 def page_classification(datasets: Dict[str, Any]) -> None:
     render_section_header(
         title="Classification SND30",
@@ -770,235 +1019,183 @@ def page_classification(datasets: Dict[str, Any]) -> None:
         badge_variant="classification",
     )
 
-    if classification_mod is None:
-        st.error("Le module `classification.py` n’a pas pu être importé.")
-        return
+    precomputed = load_precomputed_classifications()
+    budget_classif_dfs = precomputed["budget_classif"]
+    article_classif_dfs = precomputed["article_classif"]
 
     budget_dfs: Dict[str, pd.DataFrame] = datasets["budget"]
     article_dfs: Dict[str, pd.DataFrame] = datasets["articles"]
 
     tabs = st.tabs(["Projets budgétaires", "Articles de loi"])
 
+    # ── Onglet Projets budgétaires ─────────────────────────────────────────
     with tabs[0]:
-        if not budget_dfs:
-            st.info("Aucun budget JSON détecté. Fournir un fichier ou utiliser l’extraction PDF.")
-        else:
-            st.markdown("#### Classification des libellés budgétaires par pilier SND30")
-            annees_sel = st.multiselect(
-                "Années à inclure dans la classification",
-                options=sorted(budget_dfs.keys()),
-                default=sorted(budget_dfs.keys()),
+        has_budget_classif = bool(budget_classif_dfs)
+
+        if has_budget_classif:
+            render_default_badge("Classification budgétaire pré-calculée (JSON local)")
+            st.markdown("#### Résultats de classification des libellés budgétaires par pilier SND30")
+
+            annees_budget_classif = sorted(budget_classif_dfs.keys())
+            annees_sel_def = st.multiselect(
+                "Années à afficher",
+                options=annees_budget_classif,
+                default=annees_budget_classif,
+                key="budget_classif_default_years",
             )
-            if not annees_sel:
-                st.warning("Sélectionner au moins une année.")
+
+            if annees_sel_def:
+                df_merged_default = get_concat_df({a: budget_classif_dfs[a] for a in annees_sel_def})
+                # Synchroniser dans session_state pour la page Analyse
+                st.session_state["df_budget_classif"] = df_merged_default
+                _render_classification_visuals_budget(df_merged_default, annees_sel_def)
+        else:
+            if not budget_dfs:
+                st.info("Aucun budget JSON détecté. Fournir un fichier ou utiliser l'extraction PDF.")
+
+        # Toujours proposer de relancer
+        with st.expander("🔄 Relancer la classification (recalcul par le modèle)", expanded=not has_budget_classif):
+            if classification_mod is None:
+                st.error("Le module `classification.py` n'a pas pu être importé.")
+            elif not budget_dfs:
+                st.info("Aucun budget JSON détecté.")
             else:
-                df_budget_all = get_concat_df({a: budget_dfs[a] for a in annees_sel})
-                st.write(f"{len(df_budget_all)} lignes budgétaires sélectionnées.")
+                annees_sel = st.multiselect(
+                    "Années à inclure",
+                    options=sorted(budget_dfs.keys()),
+                    default=sorted(budget_dfs.keys()),
+                    key="budget_classif_rerun_years",
+                )
+                if annees_sel:
+                    df_budget_all = get_concat_df({a: budget_dfs[a] for a in annees_sel})
+                    st.write(f"{len(df_budget_all)} lignes budgétaires sélectionnées.")
 
-                col_opts = st.columns(3)
-                with col_opts[0]:
-                    batch_size = st.slider("Batch size", min_value=4, max_value=32, value=16, step=4)
-                with col_opts[1]:
-                    device = st.selectbox("Device", options=["auto", "CPU (-1)", "GPU (0)"], index=0)
-                    dev_param: Any = "auto"
-                    if device == "CPU (-1)":
-                        dev_param = -1
-                    elif device == "GPU (0)":
-                        dev_param = 0
-                with col_opts[2]:
-                    max_rows = st.slider(
-                        "Limiter le nombre de lignes à classer (pour tests)",
-                        min_value=50,
-                        max_value=min(2000, len(df_budget_all)),
-                        value=min(500, len(df_budget_all)),
-                    )
-
-                if st.button("Lancer la classification des libellés", type="primary"):
-                    subset = df_budget_all.head(max_rows).copy()
-                    libelles = subset["libelle"].astype(str).tolist()
-                    with st.spinner("Classification zero-shot en cours..."):
-                        df_classif = classification_mod.classer_ligne_dep_snd30(
-                            liste_libelles=libelles,
-                            batch_size=batch_size,
-                            device=dev_param,
-                            modele_dir=str(BASE_DIR / "modele"),
+                    col_opts = st.columns(3)
+                    with col_opts[0]:
+                        batch_size = st.slider("Batch size", min_value=4, max_value=32, value=16, step=4, key="bs_budget_rerun")
+                    with col_opts[1]:
+                        device = st.selectbox("Device", options=["auto", "CPU (-1)", "GPU (0)"], index=0, key="dev_budget_rerun")
+                        dev_param: Any = "auto"
+                        if device == "CPU (-1)":
+                            dev_param = -1
+                        elif device == "GPU (0)":
+                            dev_param = 0
+                    with col_opts[2]:
+                        max_rows = st.slider(
+                            "Limiter le nombre de lignes",
+                            min_value=50,
+                            max_value=min(2000, len(df_budget_all)),
+                            value=min(500, len(df_budget_all)),
+                            key="mr_budget_rerun",
                         )
-                    subset = subset.reset_index(drop=True)
-                    df_classif = df_classif.reset_index(drop=True)
-                    df_merged = pd.concat([subset, df_classif], axis=1)
 
-                    # Ajouter colonnes nettoyées (sans écraser source pour garder l’année par ligne)
-                    if pretraitement is not None and "cp" in df_merged.columns:
-                        df_merged["cp_clean"] = df_merged["cp"].astype(str).apply(parse_amount_to_float)
-                    if pretraitement is not None and "ae" in df_merged.columns:
-                        df_merged["ae_clean"] = df_merged["ae"].astype(str).apply(parse_amount_to_float)
+                    if st.button("Lancer la classification des libellés", type="primary", key="btn_budget_classif_rerun"):
+                        subset = df_budget_all.head(max_rows).copy()
+                        libelles = subset["libelle"].astype(str).tolist()
+                        with st.spinner("Classification zero-shot en cours..."):
+                            df_classif = classification_mod.classer_ligne_dep_snd30(
+                                liste_libelles=libelles,
+                                batch_size=batch_size,
+                                device=dev_param,
+                                modele_dir=str(BASE_DIR / "modele"),
+                            )
+                        subset = subset.reset_index(drop=True)
+                        df_classif = df_classif.reset_index(drop=True)
+                        df_merged = pd.concat([subset, df_classif], axis=1)
 
-                    st.session_state["df_budget_classif"] = df_merged
+                        if pretraitement is not None and "cp" in df_merged.columns:
+                            df_merged["cp_clean"] = df_merged["cp"].astype(str).apply(parse_amount_to_float)
+                        if pretraitement is not None and "ae" in df_merged.columns:
+                            df_merged["ae_clean"] = df_merged["ae"].astype(str).apply(parse_amount_to_float)
 
-                    st.success("Classification terminée.")
+                        st.session_state["df_budget_classif"] = df_merged
+                        st.success("Classification terminée.")
+                        _render_classification_visuals_budget(df_merged, annees_sel)
 
-                    # KPIs
-                    k1, k2, k3 = st.columns(3)
-                    with k1:
-                        st.metric("Lignes classifiées", len(df_merged))
-                    with k2:
-                        st.metric("Piliers SND30", df_merged["Pilier"].nunique() if "Pilier" in df_merged.columns else 0)
-                    with k3:
-                        sc = df_merged["Score"].mean() if "Score" in df_merged.columns else 0
-                        st.metric("Score moyen", f"{sc:.3f}")
-
-                    with st.expander("Télécharger la classification (CSV)"):
-                        display_df_with_download(df_merged, "classification_lignes_budgetaires")
-
-                    # Visualisations si colonnes adéquates
-                    if "source" in df_merged.columns:
-                        df_plot = df_merged.rename(columns={"Libellé": "Libellé"})
-                    else:
-                        df_plot = df_merged.copy()
-                        df_plot["source"] = ";".join(annees_sel)
-
-                    fig_rep = classification_mod.plot_repartition_piliers_par_annee(df_plot, source_col="source")
-                    st.plotly_chart(fig_rep, use_container_width=True)
-
-                    if "Score" in df_plot.columns:
-                        fig_hist = classification_mod.plot_distribution_scores_classification(df_plot, source_col="source")
-                        st.plotly_chart(fig_hist, use_container_width=True)
-
-                        fig_box = classification_mod.plot_boxplot_scores_par_pilier(df_plot, source_col="source")
-                        st.plotly_chart(fig_box, use_container_width=True)
-
-                    # Wordclouds par pilier (comme dans le notebook)
-                    if hasattr(classification_mod, "plot_wordcloud_projets_par_pilier"):
-                        st.markdown("#### Nuages de mots par pilier SND30")
-                        for annee in annees_sel:
-                            df_annee = df_merged[df_merged["source"] == annee] if "source" in df_merged.columns else df_merged
-                            if not df_annee.empty and "Pilier" in df_annee.columns:
-                                try:
-                                    df_annee = df_annee.copy()
-                                    df_annee["source"] = annee
-                                    fig_wc = classification_mod.plot_wordcloud_projets_par_pilier(
-                                        df_annee, annee=annee, libelle_col="libelle", pilier_col="Pilier", source_col="source"
-                                    )
-                                    st.pyplot(fig_wc)
-                                    import matplotlib.pyplot as plt
-                                    plt.close(fig_wc)
-                                except Exception as e:
-                                    st.caption(f"Wordcloud {annee}: {e}")
-
+    # ── Onglet Articles de loi ─────────────────────────────────────────────
     with tabs[1]:
-        if not article_dfs:
-            st.info("Aucun JSON d’articles détecté.")
-        else:
-            st.markdown("#### Classification des articles de loi par pilier SND30")
-            annees_sel_art = st.multiselect(
-                "Années à inclure",
-                options=sorted(article_dfs.keys()),
-                default=sorted(article_dfs.keys()),
-                key="classification_articles_years",
+        has_article_classif = bool(article_classif_dfs)
+
+        if has_article_classif:
+            render_default_badge("Classification des articles pré-calculée (JSON local)")
+            st.markdown("#### Résultats de classification des articles de loi par pilier SND30")
+
+            annees_article_classif = sorted(article_classif_dfs.keys())
+            annees_sel_art_def = st.multiselect(
+                "Années à afficher",
+                options=annees_article_classif,
+                default=annees_article_classif,
+                key="article_classif_default_years",
             )
-            if not annees_sel_art:
-                st.warning("Sélectionner au moins une année.")
+
+            if annees_sel_art_def:
+                df_merged_art_default = get_concat_df({a: article_classif_dfs[a] for a in annees_sel_art_def})
+                st.session_state["df_articles_classif"] = df_merged_art_default
+                _render_classification_visuals_articles(df_merged_art_default, annees_sel_art_def)
+        else:
+            if not article_dfs:
+                st.info("Aucun JSON d'articles détecté.")
+
+        # Toujours proposer de relancer
+        with st.expander("🔄 Relancer la classification des articles (recalcul par le modèle)", expanded=not has_article_classif):
+            if classification_mod is None:
+                st.error("Le module `classification.py` n'a pas pu être importé.")
+            elif not article_dfs:
+                st.info("Aucun JSON d'articles détecté.")
             else:
-                df_articles_all = get_concat_df({a: article_dfs[a] for a in annees_sel_art})
-                st.write(f"{len(df_articles_all)} articles sélectionnés.")
+                annees_sel_art = st.multiselect(
+                    "Années à inclure",
+                    options=sorted(article_dfs.keys()),
+                    default=sorted(article_dfs.keys()),
+                    key="article_classif_rerun_years",
+                )
+                if annees_sel_art:
+                    df_articles_all = get_concat_df({a: article_dfs[a] for a in annees_sel_art})
+                    st.write(f"{len(df_articles_all)} articles sélectionnés.")
 
-                col_opts = st.columns(3)
-                with col_opts[0]:
-                    batch_size_art = st.slider("Batch size", min_value=4, max_value=32, value=16, step=4, key="batch_articles")
-                with col_opts[1]:
-                    device_art = st.selectbox(
-                        "Device",
-                        options=["auto", "CPU (-1)", "GPU (0)"],
-                        index=0,
-                        key="device_articles",
-                    )
-                    dev_param_art: Any = "auto"
-                    if device_art == "CPU (-1)":
-                        dev_param_art = -1
-                    elif device_art == "GPU (0)":
-                        dev_param_art = 0
-                with col_opts[2]:
-                    max_rows_art = st.slider(
-                        "Limiter le nombre d’articles à classer",
-                        min_value=20,
-                        max_value=min(1000, len(df_articles_all)),
-                        value=min(200, len(df_articles_all)),
-                        key="max_rows_articles",
-                    )
-
-                if st.button("Lancer la classification des articles", type="primary"):
-                    subset_art = df_articles_all.head(max_rows_art).copy()
-                    textes = subset_art["texte_complet"].astype(str).tolist()
-
-                    with st.spinner("Classification zero-shot des articles en cours..."):
-                        df_art_classif = classification_mod.classer_articles_snd30(
-                            liste_articles=textes,
-                            batch_size=batch_size_art,
-                            device=dev_param_art,
-                            modele_dir=str(BASE_DIR / "modele"),
+                    col_opts = st.columns(3)
+                    with col_opts[0]:
+                        batch_size_art = st.slider("Batch size", min_value=4, max_value=32, value=16, step=4, key="bs_art_rerun")
+                    with col_opts[1]:
+                        device_art = st.selectbox("Device", options=["auto", "CPU (-1)", "GPU (0)"], index=0, key="dev_art_rerun")
+                        dev_param_art: Any = "auto"
+                        if device_art == "CPU (-1)":
+                            dev_param_art = -1
+                        elif device_art == "GPU (0)":
+                            dev_param_art = 0
+                    with col_opts[2]:
+                        max_rows_art = st.slider(
+                            "Limiter le nombre d'articles",
+                            min_value=20,
+                            max_value=min(1000, len(df_articles_all)),
+                            value=min(200, len(df_articles_all)),
+                            key="mr_art_rerun",
                         )
 
-                    subset_art = subset_art.reset_index(drop=True)
-                    df_art_classif = df_art_classif.reset_index(drop=True)
-                    df_merged_art = pd.concat([subset_art, df_art_classif], axis=1)
-                    if "source" not in df_merged_art.columns:
-                        df_merged_art["source"] = ";".join(annees_sel_art)
+                    if st.button("Lancer la classification des articles", type="primary", key="btn_art_classif_rerun"):
+                        subset_art = df_articles_all.head(max_rows_art).copy()
+                        textes = subset_art["texte_complet"].astype(str).tolist()
+                        with st.spinner("Classification zero-shot des articles en cours..."):
+                            df_art_classif = classification_mod.classer_articles_snd30(
+                                liste_articles=textes,
+                                batch_size=batch_size_art,
+                                device=dev_param_art,
+                                modele_dir=str(BASE_DIR / "modele"),
+                            )
+                        subset_art = subset_art.reset_index(drop=True)
+                        df_art_classif = df_art_classif.reset_index(drop=True)
+                        df_merged_art = pd.concat([subset_art, df_art_classif], axis=1)
+                        if "source" not in df_merged_art.columns:
+                            df_merged_art["source"] = ";".join(annees_sel_art)
 
-                    st.session_state["df_articles_classif"] = df_merged_art
+                        st.session_state["df_articles_classif"] = df_merged_art
+                        st.success("Classification des articles terminée.")
+                        _render_classification_visuals_articles(df_merged_art, annees_sel_art)
 
-                    st.success("Classification des articles terminée.")
 
-                    ka1, ka2, ka3 = st.columns(3)
-                    with ka1:
-                        st.metric("Articles classifiés", len(df_merged_art))
-                    with ka2:
-                        st.metric("Piliers SND30", df_merged_art["Pilier"].nunique() if "Pilier" in df_merged_art.columns else 0)
-                    with ka3:
-                        sca = df_merged_art["Score"].mean() if "Score" in df_merged_art.columns else 0
-                        st.metric("Score moyen", f"{sca:.3f}")
-
-                    with st.expander("Télécharger la classification des articles (CSV)"):
-                        display_df_with_download(df_merged_art, "classification_articles_loi")
-
-                    fig_rep_art = classification_mod.plot_repartition_articles_piliers(
-                        df_merged_art,
-                        source_col="source",
-                        pilier_col="Pilier",
-                    )
-                    st.plotly_chart(fig_rep_art, use_container_width=True)
-
-                    if "Score" in df_merged_art.columns:
-                        fig_hist_art = classification_mod.plot_distribution_scores_articles(
-                            df_merged_art,
-                            source_col="source",
-                            score_col="Score",
-                        )
-                        st.plotly_chart(fig_hist_art, use_container_width=True)
-
-                        fig_box_art = classification_mod.plot_boxplot_scores_articles(
-                            df_merged_art,
-                            source_col="source",
-                            pilier_col="Pilier",
-                            score_col="Score",
-                        )
-                        st.plotly_chart(fig_box_art, use_container_width=True)
-
-                    # Wordclouds articles par pilier (comme dans le notebook)
-                    if hasattr(classification_mod, "plot_wordcloud_articles_par_pilier"):
-                        st.markdown("#### Nuages de mots des articles par pilier SND30")
-                        for annee in annees_sel_art:
-                            df_art_annee = df_merged_art[df_merged_art["source"] == annee] if "source" in df_merged_art.columns else df_merged_art
-                            if not df_art_annee.empty and "Pilier" in df_art_annee.columns:
-                                try:
-                                    fig_wc_art = classification_mod.plot_wordcloud_articles_par_pilier(
-                                        df_art_annee, annee=annee, article_col="texte_complet", pilier_col="Pilier", source_col="source"
-                                    )
-                                    st.pyplot(fig_wc_art)
-                                    import matplotlib.pyplot as plt
-                                    plt.close(fig_wc_art)
-                                except Exception as e:
-                                    st.caption(f"Wordcloud articles {annee}: {e}")
-
+# ---------------------------------------------------------------------------
+# PAGE ANALYSE BUDGÉTAIRE & CONFORMITÉ — avec résultats par défaut depuis JSON
+# ---------------------------------------------------------------------------
 
 def page_analyse_budget_conformite(datasets: Dict[str, Any]) -> None:
     render_section_header(
@@ -1009,44 +1206,68 @@ def page_analyse_budget_conformite(datasets: Dict[str, Any]) -> None:
     )
 
     if analyse_budgetaire is None:
-        st.error("Le module `analyse_budgetaire.py` n’a pas pu être importé.")
+        st.error("Le module `analyse_budgetaire.py` n'a pas pu être importé.")
         return
 
-    if "df_budget_classif" not in st.session_state:
-        st.info(
-            "Aucune classification budgétaire en mémoire. "
-            "Commence par la page **Classification SND30** pour générer un DataFrame fusionné, "
-            "ou importe un fichier externe."
+    # ── Résolution de la source de données ────────────────────────────────
+    # Priorité : 1) classification pré-calculée JSON  2) session_state  3) upload manuel
+
+    precomputed = load_precomputed_classifications()
+    budget_classif_dfs = precomputed["budget_classif"]
+    has_precomputed = bool(budget_classif_dfs)
+
+    df_final_base: Optional[pd.DataFrame] = None
+    source_label = ""
+
+    if has_precomputed:
+        render_default_badge("Classification budgétaire pré-calculée (JSON local)")
+        annees_analyse = sorted(budget_classif_dfs.keys())
+        annees_sel_analyse = st.multiselect(
+            "Années à inclure dans l'analyse",
+            options=annees_analyse,
+            default=annees_analyse,
+            key="analyse_default_years",
         )
+        if annees_sel_analyse:
+            df_final_base = get_concat_df({a: budget_classif_dfs[a] for a in annees_sel_analyse})
+            source_label = "pré-calculé"
+            # Synchroniser session_state
+            st.session_state["df_budget_classif"] = df_final_base
 
-    # use_session = st.checkbox(
-    #     "Utiliser la classification calculée dans ce tableau de bord (si disponible)",
-    #     value="df_budget_classif" in st.session_state,
-    # #)
+    if df_final_base is None or df_final_base.empty:
+        # Fallback sur session_state
+        if "df_budget_classif" in st.session_state:
+            df_final_base = st.session_state["df_budget_classif"].copy()
+            source_label = "classification calculée dans ce tableau de bord"
 
-        
-    use_session = st.checkbox(
-        "Utiliser la classification calculée dans ce tableau de bord (si disponible)",
-        value=True,  # Toujours coché par défaut
-    )
-    
-    if use_session and "df_budget_classif" in st.session_state:
-        df_final_base = st.session_state["df_budget_classif"].copy()
-    else:
+    # Option pour forcer l'import manuel même si données dispo
+    with st.expander("📂 Importer un fichier de classification externe (optionnel)", expanded=(df_final_base is None)):
         uploaded = st.file_uploader(
-            "Uploader un fichier de classification fusionnée (CSV/JSON) "
-            "contenant au moins les colonnes `libelle`, `cp`/`cp_clean`, `Pilier`, `source`.",
+            "Fichier CSV/JSON contenant `libelle`, `cp`/`cp_clean`, `Pilier`, `source`.",
             type=["csv", "json"],
+            key="analyse_upload",
         )
-        if uploaded is None:
-            st.stop()
-        suffix = Path(uploaded.name).suffix.lower()
-        if suffix == ".csv":
-            df_final_base = pd.read_csv(uploaded)
-        else:
-            df_final_base = pd.read_json(uploaded)
+        if uploaded is not None:
+            suffix = Path(uploaded.name).suffix.lower()
+            if suffix == ".csv":
+                df_final_base = pd.read_csv(uploaded)
+            else:
+                df_final_base = pd.read_json(uploaded)
+            source_label = f"fichier importé ({uploaded.name})"
 
-    # KPIs conformité
+    if df_final_base is None or df_final_base.empty:
+        st.info(
+            "Aucune donnée de classification disponible. "
+            "Les résultats pré-calculés seront chargés automatiquement dès que les fichiers JSON "
+            f"({', '.join(AVAILABLE_BUDGET_CLASSIF_FILES.values())}) sont présents dans `data/`. "
+            "Vous pouvez aussi lancer la classification depuis l'onglet **Classification SND30** "
+            "ou importer un fichier ci-dessus."
+        )
+        return
+
+    st.caption(f"Source des données : **{source_label}**")
+
+    # ── KPIs ───────────────────────────────────────────────────────────────
     kc1, kc2, kc3, kc4 = st.columns(4)
     with kc1:
         st.metric("Lignes analysées", len(df_final_base))
@@ -1063,29 +1284,41 @@ def page_analyse_budget_conformite(datasets: Dict[str, Any]) -> None:
     with kc4:
         st.metric("Exercices", df_final_base["source"].nunique() if "source" in df_final_base.columns else "N/A")
 
-    # S’assurer que les colonnes de montants nettoyés existent
+    # Préparer les données si nécessaire
     if pretraitement is not None and "cp_clean" not in df_final_base.columns:
-        df_final_base = pretraitement.preparer_donnees_budget(
+        try:
+            df_final_base = pretraitement.preparer_donnees_budget(
+                df_final_base,
+                source=df_final_base.get("source", "N/A").iloc[0] if not df_final_base.empty else "N/A",
+            )
+        except Exception:
+            df_final_base["cp_clean"] = df_final_base.get("cp", pd.Series(dtype=float)).apply(parse_amount_to_float)
+
+    # Analyse conformité
+    try:
+        df_analyse = analyse_budgetaire.analyser_conformite_snd30(
             df_final_base,
-            source=df_final_base.get("source", "N/A").iloc[0] if not df_final_base.empty else "N/A",
+            source_col="source",
+            pilier_col="Pilier",
+            cp_col="cp_clean" if "cp_clean" in df_final_base.columns else "cp",
+            libelle_col="Libellé" if "Libellé" in df_final_base.columns else "libelle",
         )
+    except Exception as e:
+        st.error(f"Erreur lors de l'analyse de conformité : {e}")
+        return
 
-    df_analyse = analyse_budgetaire.analyser_conformite_snd30(
-        df_final_base,
-        source_col="source",
-        pilier_col="Pilier",
-        cp_col="cp_clean" if "cp_clean" in df_final_base.columns else "cp",
-        libelle_col="Libellé" if "Libellé" in df_final_base.columns else "libelle",
-    )
+    try:
+        df_gini = analyse_budgetaire.analyse_concentration_par_pilier(
+            df_final_base,
+            source_col="source",
+            pilier_col="Pilier",
+            cp_col="cp_clean" if "cp_clean" in df_final_base.columns else "cp",
+        )
+    except Exception as e:
+        st.warning(f"Erreur lors du calcul de concentration Gini : {e}")
+        df_gini = pd.DataFrame()
 
-    df_gini = analyse_budgetaire.analyse_concentration_par_pilier(
-        df_final_base,
-        source_col="source",
-        pilier_col="Pilier",
-        cp_col="cp_clean" if "cp_clean" in df_final_base.columns else "cp",
-    )
-
-    # Donut répartition budget par pilier (moyenne des années)
+    # ── Visuels ────────────────────────────────────────────────────────────
     pilier_budget = df_analyse.groupby("Pilier_SND30")["Budget_Total_CP"].sum().reset_index()
     if not pilier_budget.empty:
         fig_donut = px.pie(
@@ -1097,15 +1330,23 @@ def page_analyse_budget_conformite(datasets: Dict[str, Any]) -> None:
         fig_donut.update_traces(textposition="inside", textinfo="percent+label")
         st.plotly_chart(fig_donut, use_container_width=True)
 
-    fig_align = analyse_budgetaire.plot_alignement_budget_frequence(df_analyse)
-    st.plotly_chart(fig_align, use_container_width=True)
+    try:
+        fig_align = analyse_budgetaire.plot_alignement_budget_frequence(df_analyse)
+        st.plotly_chart(fig_align, use_container_width=True)
+    except Exception as e:
+        st.caption(f"Graphique alignement : {e}")
 
-    fig_align_conc = analyse_budgetaire.plot_alignement_concentration(df_analyse, df_gini)
-    st.plotly_chart(fig_align_conc, use_container_width=True)
+    if not df_gini.empty:
+        try:
+            fig_align_conc = analyse_budgetaire.plot_alignement_concentration(df_analyse, df_gini)
+            st.plotly_chart(fig_align_conc, use_container_width=True)
+        except Exception as e:
+            st.caption(f"Graphique concentration : {e}")
 
     with st.expander("Télécharger les analyses (CSV)"):
         display_df_with_download(df_analyse, "analyse_conformite_snd30")
-        display_df_with_download(df_gini, "analyse_concentration_par_pilier")
+        if not df_gini.empty:
+            display_df_with_download(df_gini, "analyse_concentration_par_pilier")
 
 
 def page_audit_semantique(datasets: Dict[str, Any]) -> None:
@@ -1117,13 +1358,13 @@ def page_audit_semantique(datasets: Dict[str, Any]) -> None:
     )
 
     if analyse_semantique is None:
-        st.error("Le module `analyse_semantique.py` n’a pas pu être importé.")
+        st.error("Le module `analyse_semantique.py` n'a pas pu être importé.")
         return
 
     article_dfs: Dict[str, pd.DataFrame] = datasets["articles"]
 
     if not article_dfs:
-        st.info("Aucun JSON d’articles détecté. Fournir au moins deux jeux d’articles.")
+        st.info("Aucun JSON d'articles détecté. Fournir au moins deux jeux d'articles.")
         return
 
     annees = sorted(article_dfs.keys())
@@ -1145,7 +1386,7 @@ def page_audit_semantique(datasets: Dict[str, Any]) -> None:
         st.metric("Période", f"{annee_a} ↔ {annee_b}")
 
     max_articles = st.slider(
-        "Nombre maximum d’articles par année pour l’audit (pour limiter le temps de calcul)",
+        "Nombre maximum d'articles par année pour l'audit",
         min_value=20,
         max_value=300,
         value=100,
@@ -1163,12 +1404,12 @@ def page_audit_semantique(datasets: Dict[str, Any]) -> None:
         local_model_path: Optional[str] = None
         if mode_modele == "Chemin local (hors-ligne)":
             local_model_path = st.text_input(
-                "Chemin local vers le modèle SentenceTransformer (dossier contenant config.json, pytorch_model.bin, etc.)",
+                "Chemin local vers le modèle SentenceTransformer",
                 value="",
                 placeholder="ex: c:/models/biencoder-camembert-base-mmarcoFR",
             ).strip() or None
 
-    if st.button("Lancer l’audit sémantique (SentenceTransformer – peut être long)", type="primary"):
+    if st.button("Lancer l'audit sémantique (SentenceTransformer – peut être long)", type="primary"):
         articles_2024 = df_a["texte_complet"].astype(str).head(max_articles).tolist()
         articles_2025 = df_b["texte_complet"].astype(str).head(max_articles).tolist()
 
@@ -1180,7 +1421,7 @@ def page_audit_semantique(datasets: Dict[str, Any]) -> None:
                     local_model_path=local_model_path,
                 )
             except Exception as e:
-                st.error(f"Erreur lors de l’audit sémantique : {e}")
+                st.error(f"Erreur lors de l'audit sémantique : {e}")
                 return
 
         st.success("Audit sémantique terminé.")
@@ -1190,7 +1431,6 @@ def page_audit_semantique(datasets: Dict[str, Any]) -> None:
         top_sim = results.get("top_10_similaires", [])
         top_rupt = results.get("top_10_ruptures", [])
 
-        # KPIs audit
         c1, c2, c3, c4 = st.columns(4)
         with c1:
             st.metric("Score moyen (cosinus)", f"{score_moyen:.3f}")
@@ -1202,7 +1442,6 @@ def page_audit_semantique(datasets: Dict[str, Any]) -> None:
             seuil_opt = 0.45
             st.metric("Seuil rupture (défaut)", f"{seuil_opt:.2f}")
 
-        # Construire data_combined comme dans le notebook
         df_a_work = df_a.head(max_articles).copy()
         df_b_work = df_b.head(max_articles).copy()
         if isinstance(sim_matrix, np.ndarray):
@@ -1215,14 +1454,13 @@ def page_audit_semantique(datasets: Dict[str, Any]) -> None:
                 df_b_work[["texte_complet", "similarite_max_artice", "source"]],
             ], ignore_index=True)
 
-            # Seuil optimal GMM
             try:
                 seuil_res = analyse_semantique.trouver_seuil_optimal(data_combined)
                 seuil_opt = float(seuil_res.get("seuil_optimal", 0.45))
             except Exception:
                 seuil_opt = 0.45
 
-            st.markdown("#### Graphiques d’audit sémantique (comme dans le notebook)")
+            st.markdown("#### Graphiques d'audit sémantique")
 
             fig_dist = analyse_semantique.plot_distribution_similarite(data_combined)
             st.plotly_chart(fig_dist, use_container_width=True)
@@ -1288,34 +1526,39 @@ def page_about(datasets: Dict[str, Any]) -> None:
 
     ### Structure des onglets
 
-    - **Vue d'ensemble** : KPIs globaux (nombre de lignes, articles, enveloppes CP par exercice) et graphiques de synthèse.
-    - **Extraction et données brutes** :
-      - Consultation des JSON budgétaires et des articles déjà extraits.
-      - Extraction avancée depuis PDF via `pdfplumber`, `PyMuPDF` et les appels OpenAI (si configurés).
-    - **Prétraitement des textes** :
-      - Utilisation de des modules pour nettoyage OCR, tampons et bruit.
-    - **Classification SND30** :
-      - Zero-shot classification des libellés et articles avec CamemBERT XNLI stocké localement dans `modele/`.
-    - **Analyse budgétaire & conformité** :
-      - Fusion budget + classification puis analyse d'alignement (fréquence vs budget) et de concentration (indice de Gini).
-    - **Audit sémantique** :
-      - Encodage SentenceTransformer et matrice de similarité cosinus entre articles de deux exercices.
+    - **Vue d'ensemble** : KPIs globaux et graphiques de synthèse.
+    - **Extraction et données brutes** : consultation des JSON et extraction avancée depuis PDF.
+    - **Prétraitement des textes** : affichage des résultats pré-calculés (JSON) ou recalcul à la demande.
+    - **Classification SND30** : résultats pré-calculés (JSON) ou relancement du modèle CamemBERT XNLI.
+    - **Analyse budgétaire & conformité** : chargement automatique des classifications pré-calculées.
+    - **Audit sémantique** : calcul des embeddings SentenceTransformer entre deux exercices.
+
+    ### Fichiers JSON attendus dans `data/`
+
+    | Fichier | Description |
+    |---|---|
+    | `budget_extract_2023_2024.json` | Lignes budgétaires brutes 2023-2024 |
+    | `budget_extract_2024_2025.json` | Lignes budgétaires brutes 2024-2025 |
+    | `articles_extract_2023_2024.json` | Articles de loi extraits 2023-2024 |
+    | `articles_extract_2024_2025.json` | Articles de loi extraits 2024-2025 |
+    | `classification_budget_2023_2024.json` | Classification SND30 des budgets 2023-2024 |
+    | `classification_budget_2024_2025.json` | Classification SND30 des budgets 2024-2025 |
+    | `classification_articles_2023_2024.json` | Classification SND30 des articles 2023-2024 |
+    | `classification_articles_2024_2025.json` | Classification SND30 des articles 2024-2025 |
+    | `pretraitement_articles_2023_2024.json` | Résultats prétraitement articles 2023-2024 |
+    | `pretraitement_articles_2024_2025.json` | Résultats prétraitement articles 2024-2025 |
 
     ### Prérequis techniques
 
     - **Python** ≥ 3.9, **Streamlit**, **pandas**, **numpy**, **plotly**, **sentence-transformers**, **transformers**.
-    - Pour l'extraction avancée PDF :
-      - `pdfplumber`, `PyMuPDF (fitz)`, bibliothèque `openai`, variable d'environnement `OPENAI_API_KEY`.
-    - Pour l'audit sémantique hors ligne :
-      - Modèle SentenceTransformer téléchargé localement, chemin renseigné dans l'onglet **Audit sémantique**.
-
-
+    - Pour l'extraction avancée PDF : `pdfplumber`, `PyMuPDF (fitz)`, `openai`, variable `OPENAI_API_KEY`.
+    - Pour l'audit sémantique hors ligne : modèle SentenceTransformer téléchargé localement.
     """
 )
 
 
 # ---------------------------------------------------------------------------
-# Point d’entrée Streamlit
+# Point d'entrée Streamlit
 # ---------------------------------------------------------------------------
 
 def main() -> None:
@@ -1332,7 +1575,7 @@ def main() -> None:
     page = st.sidebar.radio(
         "Aller vers",
         [
-            "Vue d’ensemble",
+            "Vue d'ensemble",
             "Extraction et données brutes",
             "Prétraitement des textes",
             "Classification SND30",
@@ -1352,13 +1595,12 @@ def main() -> None:
                     et audit sémantique des lois de finances sur plusieurs exercices.
                 </p>
             </div>
-           
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    if page == "Vue d’ensemble":
+    if page == "Vue d'ensemble":
         page_overview(datasets)
     elif page == "Extraction et données brutes":
         page_extraction(datasets)
@@ -1376,4 +1618,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
