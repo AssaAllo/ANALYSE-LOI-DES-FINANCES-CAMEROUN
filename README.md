@@ -51,7 +51,7 @@ curl -sSL https://install.python-poetry.org | python3 -
 ### 1. Cloner et installer
 
 ```bash
-git clone <url-du-repo>
+git clone https://github.com/AssaAllo/ANALYSE-LOI-DES-FINANCES-CAMEROUN
 cd analyse-budget-cameroun
 
 # Installer toutes les dépendances

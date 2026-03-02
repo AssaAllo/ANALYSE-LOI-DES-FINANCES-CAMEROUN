@@ -403,7 +403,7 @@ def render_section_header(title: str, subtitle: str, badge_label: str, badge_var
 def page_overview(datasets: Dict[str, Any]) -> None:
     render_section_header(
         title="Vue d’ensemble",
-        subtitle="Vue synthétique des volumes budgétaires et des articles extraits par exercice.",
+        subtitle="Vue synthétique des volumes budgétaires et des articles extraits par exercice ",
         badge_label="Synthèse",
         badge_variant="overview",
     )
@@ -1264,7 +1264,7 @@ def page_about(datasets: Dict[str, Any]) -> None:
 
     st.markdown(
     """
-    ### 👥 Équipe projet
+    ### Équipe projet
 
     - **ASSA Allo** — 
     - **AYONTA NDJOUTSE Vanelle**
@@ -1273,28 +1273,28 @@ def page_about(datasets: Dict[str, Any]) -> None:
 
     ---
 
-    ### 🎯 Objectifs du tableau de bord
+    ### Objectifs du tableau de bord
 
     - **Pilotage budgétaire** : analyser les dotations CP/AE par chapitre, ministère et pilier SND30.
     - **Traçabilité réglementaire** : rapprocher les projets budgétaires des articles de loi correspondants.
     - **Audit sémantique** : identifier continuités et ruptures de contenu entre deux exercices.
 
-    ### 📂 Structure des onglets
+    ### Structure des onglets
 
-    - **📊 Vue d'ensemble** : KPIs globaux (nombre de lignes, articles, enveloppes CP par exercice) et graphiques de synthèse.
-    - **📥 Extraction et données brutes** :
+    - **Vue d'ensemble** : KPIs globaux (nombre de lignes, articles, enveloppes CP par exercice) et graphiques de synthèse.
+    - **Extraction et données brutes** :
       - Consultation des JSON budgétaires et des articles déjà extraits.
       - Extraction avancée depuis PDF via `pdfplumber`, `PyMuPDF` et les appels OpenAI (si configurés).
-    - **🧹 Prétraitement des textes** :
+    - **Prétraitement des textes** :
       - Utilisation de des modules pour nettoyage OCR, tampons et bruit.
-    - **🏷️ Classification SND30** :
+    - **Classification SND30** :
       - Zero-shot classification des libellés et articles avec CamemBERT XNLI stocké localement dans `modele/`.
-    - **💰 Analyse budgétaire & conformité** :
+    - **Analyse budgétaire & conformité** :
       - Fusion budget + classification puis analyse d'alignement (fréquence vs budget) et de concentration (indice de Gini).
-    - **🔍 Audit sémantique** :
+    - **Audit sémantique** :
       - Encodage SentenceTransformer et matrice de similarité cosinus entre articles de deux exercices.
 
-    ### ⚙️ Prérequis techniques
+    ### Prérequis techniques
 
     - **Python** ≥ 3.9, **Streamlit**, **pandas**, **numpy**, **plotly**, **sentence-transformers**, **transformers**.
     - Pour l'extraction avancée PDF :
@@ -1339,7 +1339,7 @@ def main() -> None:
         """
         <div class="taf-hero">
             <div class="taf-hero-main">
-                <h1>Tableau de bord – Loi de finances, budget et SND30</h1>
+                <h1>Tableau de bord – Loi de finances, budget et SND30 🇨🇲 </h1>
                 <p>
                     Pilotage des projets budgétaires, analyse de conformité aux piliers SND30
                     et audit sémantique des lois de finances sur plusieurs exercices.
