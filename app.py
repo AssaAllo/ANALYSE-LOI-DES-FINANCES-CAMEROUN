@@ -813,7 +813,7 @@ def page_classification(datasets: Dict[str, Any]) -> None:
                         value=min(500, len(df_budget_all)),
                     )
 
-                if st.button("Lancer la classification des libellés (15 secondes pour 50 articles avec batch size de 16)", type="primary"):
+                if st.button("Lancer la classification des libellés (15 secondes pour 50 lignes avec batch size de 16)", type="primary"):
                     subset = df_budget_all.head(max_rows).copy()
                     libelles = subset["libelle"].astype(str).tolist()
                     with st.spinner("Classification zero-shot en cours..."):
@@ -926,7 +926,7 @@ def page_classification(datasets: Dict[str, Any]) -> None:
                         key="max_rows_articles",
                     )
 
-                if st.button("Lancer la classification des articles", type="primary"):
+                if st.button("Lancer la classification des articles (15 secondes pour 50 articles avec batch size de 16)", type="primary"):
                     subset_art = df_articles_all.head(max_rows_art).copy()
                     textes = subset_art["texte_complet"].astype(str).tolist()
 
